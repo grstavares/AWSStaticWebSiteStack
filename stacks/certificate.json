@@ -1,0 +1,79 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+  
+    "Description" : "Cloud Formation for AWS Certificate Request and Approval using DNS Validation Option. This Template uses Custom Resources that will deploy and execute lambda functions to request the certificate and create the Route53 recordsets to validation.",
+  
+    "Parameters" : {
+      "HostedZone" : {
+        "Type" : "AWS::Route53::HostedZone::Id",
+        "Description" : "The DNS name of an existing Amazon Route 53 hosted zone"
+      },
+      "HostName" : {
+        "Type" : "String",
+        "Description" : "The HostName address",
+        "Default" : "www",
+        "AllowedPattern" : "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
+        "ConstraintDescription" : "must be a valid DNS zone name."
+      },
+      "AlternativeDomains" : {
+        "Type" : "String",
+        "Description" : "Alternative Domains to be configured in the Certificate"
+      },
+      "CertificateRequestLambdaARN" : {
+        "Type" : "String",
+        "Description" : "The ARN of lambda request Function",
+        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:RequestPublicCertificate"
+      },
+      "CertificateApprovalLambdaARN" : {
+        "Type" : "String",
+        "Description" : "The ARN of lambda request Function",
+        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:ApproveRequestedCertificate"
+      },
+      "CheckCertificateApprovalLambdaARN" : {
+        "Type" : "String",
+        "Description" : "The ARN of lambda request Function",
+        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:CheckCertificationStatus"
+      }
+    },
+  
+    "Resources" : {
+
+        "AWSPublicCertificateRequest" : {
+           "Type": "Custom::AWSCertificateRequest",
+           "Version" : "1.0",
+           "Properties" : {
+              "ServiceToken": {"Ref": "CertificateRequestLambdaARN"},
+              "hostedZoneId": {"Ref": "HostedZone"},
+              "hostName" : {"Ref": "HostName"},
+              "extraDomains" : {"Ref": "AlternativeDomains"}
+           }
+         },
+
+         "AWSPublicCertificateValidation" : {
+          "Type": "Custom::AWSCertificateDNSApproval",
+          "Version" : "1.0",
+          "Properties" : {
+             "ServiceToken": {"Ref": "CertificateApprovalLambdaARN"},
+             "hostedZoneId": {"Ref": "HostedZone"},
+             "hostName" : {"Ref": "HostName"},
+             "certificateARN" : {"Ref": "AWSPublicCertificateRequest"}
+          }
+        },
+
+        "AWSPublicCertificateCheckValidation" : {
+         "Type": "Custom::AWSCertificateApprovalCheck",
+         "Version" : "1.0",
+         "DependsOn" : [ "AWSPublicCertificateValidation" ],
+         "Properties" : {
+            "ServiceToken": {"Ref": "CheckCertificateApprovalLambdaARN"},
+            "certificateARN" : {"Ref": "AWSPublicCertificateRequest"}
+         } 
+      }
+    },
+
+     "Outputs" : {
+        "CertificateARN" : {
+           "Value" : {"Ref": "AWSPublicCertificateRequest"}
+        }
+     }
+}

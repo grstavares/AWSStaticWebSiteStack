@@ -1,0 +1,78 @@
+{
+    "AWSTemplateFormatVersion" : "2010-09-09",
+  
+    "Description" : "Cloud Formation for AWS Certificate Request and Approval Functions",
+  
+    "Parameters" : {
+      "BucketName" : {
+        "Type" : "String",
+        "Description" : "Bucket Name were are stored the source code of Lambda Functions. Must be in the same region were Cloud Formation is being executed!"
+      }
+    },
+  
+    "Resources" : {
+
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+              "AssumeRolePolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [{ "Effect": "Allow", "Principal": {"Service": ["lambda.amazonaws.com"]}, "Action": ["sts:AssumeRole"] }]
+              },
+              "Path": "/",
+              "Policies": [{
+                "PolicyName": "root",
+                "PolicyDocument": {
+                  "Version": "2012-10-17",
+                  "Statement": [{ "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" }]
+                }
+              }]
+            }
+        },
+
+        "CertificateRequestFunction" : {
+            "Type" : "AWS::Lambda::Function",
+            "Properties" : {
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "requestCertificate.zip"},
+              "Description" : "Function to be executed as part of Custom Cloud Formation Resource to Request a Public Certificate from ACM",
+              "Handler" : "handler",
+              "MemorySize" : 128,
+              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Runtime" : "nodejs8.10",
+              "Timeout" : 10
+            }
+        },
+
+        "CertificateApprovalFunction" : {
+            "Type" : "AWS::Lambda::Function",
+            "Properties" : {
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "approveCertificate.zip"},
+              "Description" : "Function to be executed as part of Custom Cloud Formation Resource to approve the Public Certificate requested from ACM",
+              "Handler" : "handler",
+              "MemorySize" : 128,
+              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Runtime" : "nodejs8.10",
+              "Timeout" : 10
+            }
+        },
+
+        "CheckCertificateFunction" : {
+            "Type" : "AWS::Lambda::Function",
+            "Properties" : {
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "checkCertificateApproval.zip"},
+              "Description" : "Function to be executed as part of Custom Cloud Formation Resource to check for approval of the Public Certificate requested from ACM",
+              "Handler" : "handler",
+              "MemorySize" : 128,
+              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Runtime" : "nodejs8.10",
+              "Timeout" : 180
+            }
+        }
+    },
+
+     "Outputs" : {
+        "CertificateRequestFunction" : {"Value" : {"Ref": "CertificateRequestFunction"}},
+        "CertificateApprovalFunction" : {"Value" : {"Ref": "CertificateApprovalFunction"}},
+        "CheckCertificateFunction" : {"Value" : {"Ref": "CheckCertificateFunction"}}
+     }
+}
