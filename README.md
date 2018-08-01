@@ -31,5 +31,5 @@ The creation of these AWS resources does not incurr costs. However you will incu
 3. Create a CodePipeline Job to build and deploy the code;
 4. Refactor lambda function to concentrate the three in one.
 
-## Bugs and improvements
+## Bugs and Improvements
 If you find a bug in the stack templates or in lambda functions, please open an issue in this github repo. It would be better if you create a new branch, fix the bug or implement the improvement and submit a pull request. ;-)
