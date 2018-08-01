@@ -27,6 +27,7 @@ function createResource(event, context) {
             var domainName =  hostName + "." + zoneName.substring(0, zoneName.length-1);
 
             var executionInfo = {
+                HostedZoneName:zoneName,
                 DomainName: domainName,
                 AlternativeDomains: extraDomains
             };
@@ -54,14 +55,15 @@ function requestCertificate(event, context, info) {
         acm_params.SubjectAlternativeNames = info.AlternativeDomains;
     }
     
-    var acm = new aws.ACM({apiVersion: '2015-12-08'});
+    var acm = new aws.ACM({apiVersion: '2015-12-08', region: 'us-east-1'});
     acm.requestCertificate(acm_params, function(err, data) {
       
       if (err) {
         sendResponse(event, context,"FAILED", "NOTCREATED", {"Message" : err.stack});
       } else {
         var arn = data.CertificateArn;
-        sendResponse(event, context, "SUCCESS", arn, {"Message" : "Resource creation successful!", "ResourceId":arn});
+        var zoneName = info.HostedZoneName.substring(0, info.HostedZoneName.length - 1)
+        sendResponse(event, context, "SUCCESS", arn, {"Message" : "Resource creation successful!", "ResourceId":arn, "HostedZoneName":zoneName});
       }
       
     });
@@ -88,7 +90,7 @@ function deleteResource(event, context) {
     const resourceId = event.PhysicalResourceId;
     if (resourceId != undefined && String(resourceId) != "" && String(resourceId) != "NOTCREATED") {
 
-        var acm = new aws.ACM({apiVersion: '2015-12-08'});
+        var acm = new aws.ACM({apiVersion: '2015-12-08', region: 'us-east-1'});
         acm.deleteCertificate({CertificateArn: resourceId}, function(err, data) {
           
             if (err) {sendResponse(event, context,"FAILED", resourceId, {"Message" : err});
@@ -102,7 +104,6 @@ function deleteResource(event, context) {
 
 function sendResponse(event, context, responseStatus, resourceId, responseData) {
     
-    console.log("Sending response " + responseStatus + ": " + JSON.stringify(responseData));
     const responseMessage = responseStatus == "SUCCESS" ? "See the details in CloudWatch Log Stream: " + context.logStreamName : JSON.stringify(responseData.Message)
 
     var responseBody = JSON.stringify({
@@ -114,6 +115,8 @@ function sendResponse(event, context, responseStatus, resourceId, responseData) 
         LogicalResourceId: event.LogicalResourceId,
         Data: responseData
     });
+
+    console.log("Sending response " + responseStatus + ": " + responseBody);
 
     var https = require("https");
     var url = require("url");

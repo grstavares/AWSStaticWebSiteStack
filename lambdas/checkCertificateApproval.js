@@ -2,7 +2,7 @@ const aws = require('aws-sdk');
 
 exports.handler = (event, context, callback) => {
 
-    console.log('Check Certification Validation'+ JSON.stringify(event));
+    console.log('Check Certification Validation =>'+ JSON.stringify(event));
 
     if (event.RequestType == "Update" || event.RequestType == "Delete") {
         sendResponse(event, context, "SUCCESS", event.PhysicalResourceId, {"Message" : "Certificate Approval Status does not need to be Updated or Removed!"});
@@ -37,7 +37,7 @@ function checkCertificate(event, context, nextCall) {
     if (nextCall > 0) {
         
         const certificateARN = event.ResourceProperties.certificateARN;
-        const acm = new aws.ACM({apiVersion: '2015-12-08'});
+        const acm = new aws.ACM({apiVersion: '2015-12-08', region: 'us-east-1'});
         acm.describeCertificate({CertificateArn: certificateARN}, function(err, data) {
 
             if (err == undefined) {
@@ -85,7 +85,6 @@ function checkCertificate(event, context, nextCall) {
 
 function sendResponse(event, context, responseStatus, resourceId, responseData) {
     
-    console.log("Sending response " + responseStatus + ": " + JSON.stringify(responseData));
     const responseMessage = responseStatus == "SUCCESS" ? "See the details in CloudWatch Log Stream: " + context.logStreamName : JSON.stringify(responseData.Message);
 
     var responseBody = JSON.stringify({
@@ -97,6 +96,8 @@ function sendResponse(event, context, responseStatus, resourceId, responseData) 
         LogicalResourceId: event.LogicalResourceId,
         Data: responseData
     });
+
+    console.log("Sending response " + responseStatus + ": " + responseBody);
 
     var https = require("https");
     var url = require("url");

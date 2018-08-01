@@ -25,6 +25,7 @@ awscliProfile = None
 stackList = ["stacks/master.json", "stacks/functions.json", "stacks/certificate.json", "stacks/website.json", "stacks/pipeline.json"]
 lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js"]
 filesList = stackList + lambdaList
+verbose = False
 
 def parseArgs():
 
@@ -39,6 +40,9 @@ def parseArgs():
 
 def checkInputFiles():
     
+    if verbose:
+        print("Checking files on local dir...")
+
     listChecked = []
     for file in filesList:
         listChecked.append(os.path.isfile(file))
@@ -47,11 +51,14 @@ def checkInputFiles():
 
 def zipFiles(files):
 
+    if verbose:
+        print("Compressing Lambda Code...")
+
     zipfiles = []
     for file in files:
         zipname = os.path.splitext(file)[0] + ".zip"
         with zipfile.ZipFile(zipname, 'w') as zipped:
-            zipped.write(file)
+            zipped.write(file, arcname=os.path.basename(file))
             zipfiles.append(zipname)
 
     return zipfiles
@@ -65,8 +72,8 @@ def getS3():
 
 def upload(files, bucket):
 
-    print(files)
-    print(bucket)
+    if verbose:
+        print("Uploading files to S3...")
 
     s3 = getS3()
     for file in files:
@@ -75,21 +82,26 @@ def upload(files, bucket):
 
 def clearZipped(files):
 
+    if verbose:
+        print("Cleaning zip files on local dir...")
+
     for file in files:
         os.remove(file)
 
 
 args = parseArgs()
 awscliProfile = args.profile
+verbose = args.verbose
 
 if not checkInputFiles():
     raise ValueError('Stack Files not available on current dir!')
 
 bucketName = args.bucket
 zipped = zipFiles(lambdaList)
-upload(stackList + lambdaList, bucketName)
+upload(stackList + zipped, bucketName)
 clearZipped(zipped)
 
+print("Script Done!")
 # s3 = getS3()
 # for bucket in s3.buckets.all():
 #    print(bucket.name)

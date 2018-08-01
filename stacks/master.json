@@ -28,7 +28,7 @@
         "FunctionsStack" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
-               "TemplateURL" : { "Fn::Join" : [ "/", [ {"Ref":"BucketName"}, "stacks/functions.json" ] ] },
+               "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/functions.json" ] ] },
 	           "Parameters" : {"BucketName" : {"Ref":"BucketName"}},
                "TimeoutInMinutes" : "60"
             }
@@ -37,29 +37,29 @@
         "CertificateStack" : {
 	       "Type" : "AWS::CloudFormation::Stack",
 	       "Properties" : {
-              "TemplateURL" : { "Fn::Join" : [ "/", [ {"Ref":"BucketName"}, "stacks/certificate.json" ] ] },
-              "Parameters" : {
-                  "HostedZone" : {"Ref":"HostedZone"},
-                  "HostName" : {"Ref":"HostName"},
-                  "AlternativeDomains" : {"Ref":"AlternativeDomains"},
-                  "CertificateRequestLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateRequestFunction" ] },
-                  "CertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateApprovalFunction" ] },
-                  "CheckCertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CheckCertificateFunction" ] }
+                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/certificate.json" ] ] },
+                "Parameters" : {
+                    "HostedZone" : {"Ref":"HostedZone"},
+                    "HostName" : {"Ref":"HostName"},
+                    "AlternativeDomains" : {"Ref":"AlternativeDomains"},
+                    "CertificateRequestLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateRequestFunction" ] },
+                    "CertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateApprovalFunction" ] },
+                    "CheckCertificateLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CheckCertificateFunction" ] }
                 },
-              "TimeoutInMinutes" : "60"
+                "TimeoutInMinutes" : "60"
 	       }
         },
 
         "WebSiteStack" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
-               "TemplateURL" : { "Fn::Join" : [ "/", [ {"Ref":"BucketName"}, "stacks/website.json" ] ] },
-               "Parameters" : {
-                "HostedZone" : {"Ref":"HostedZone"},
-                "HostName" : {"Ref":"HostName"},
-                "certificateARN" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.CertificateARN" ] }
-              },
-               "TimeoutInMinutes" : "60"
+                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/website.json" ] ] },
+                "Parameters" : {
+                    "HostedZoneName" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.HostedZoneName" ] },
+                    "HostName" : {"Ref":"HostName"},
+                    "certificateARN" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.CertificateARN" ] }
+                },
+                "TimeoutInMinutes" : "60"
             }
         }
 

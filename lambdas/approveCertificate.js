@@ -12,7 +12,7 @@ exports.handler = function(event, context) {
 
 function getCertificateInfo(certificateARN, resultHandler) {
 
-    var acm = new aws.ACM({apiVersion: '2015-12-08'});
+    var acm = new aws.ACM({apiVersion: '2015-12-08', region: 'us-east-1'});
     acm.describeCertificate({CertificateArn: certificateARN}, function(err, data) {
 
         if (err == undefined) {
@@ -31,6 +31,8 @@ function getCertificateInfo(certificateARN, resultHandler) {
 }
 
 function createResource(event, context) {
+
+    console.log("Approve Public Certificate. Event =>" + JSON.stringify(event))
 
     const certificateARN = event.ResourceProperties.certificateARN;
     if (certificateARN == undefined) {
@@ -176,9 +178,7 @@ function deleteRoute53Records(event, context, info) {
 }
 
 function sendResponse(event, context, responseStatus, resourceId, responseData) {
-    
-    console.log("Sending response " + responseStatus + ": " + JSON.stringify(responseData));
-    
+
     var responseBody = JSON.stringify({
         Status: responseStatus,
         Reason: "See the details in CloudWatch Log Stream: " + context.logStreamName,
@@ -188,6 +188,8 @@ function sendResponse(event, context, responseStatus, resourceId, responseData) 
         LogicalResourceId: event.LogicalResourceId,
         Data: responseData
     });
+    
+    console.log("Sending response " + responseStatus + ": " + responseBody);
 
     var https = require("https");
     var url = require("url");

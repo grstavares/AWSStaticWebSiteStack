@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
   
-    "Description" : "Cloud Formation for AWS Certificate Request and Approval Functions",
+    "Description" : "Cloud Formation Template for AWS Certificate Request and Approval Functions",
   
     "Parameters" : {
       "BucketName" : {
@@ -24,7 +24,25 @@
                 "PolicyName": "root",
                 "PolicyDocument": {
                   "Version": "2012-10-17",
-                  "Statement": [{ "Effect": "Allow", "Action": ["logs:*"], "Resource": "arn:aws:logs:*:*:*" }]
+                  "Statement": [{
+                    "Effect": "Allow",
+                     "Action": [
+                       "lambda:InvokeFunction", 
+                       "route53:GetHostedZone",
+                       "route53:ListHostedZones",
+                       "route53:ListHostedZonesByName",
+                       "route53:ChangeResourceRecordSets",
+                       "logs:CreateLogGroup",
+                       "logs:PutLogEvents",
+                       "logs:CreateLogStream",
+                       "acm:DescribeCertificate",
+                       "acm:RequestCertificate",
+                       "acm:GetCertificate",
+                       "acm:ListCertificates",
+                       "acm:DeleteCertificate"
+                      ],
+                     "Resource": "*" 
+                  }]
                 }
               }]
             }
@@ -33,11 +51,11 @@
         "CertificateRequestFunction" : {
             "Type" : "AWS::Lambda::Function",
             "Properties" : {
-              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "requestCertificate.zip"},
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "lambdas/requestCertificate.zip"},
               "Description" : "Function to be executed as part of Custom Cloud Formation Resource to Request a Public Certificate from ACM",
-              "Handler" : "handler",
+              "Handler" : "requestCertificate.handler",
               "MemorySize" : 128,
-              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Role" : { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] },
               "Runtime" : "nodejs8.10",
               "Timeout" : 10
             }
@@ -46,11 +64,11 @@
         "CertificateApprovalFunction" : {
             "Type" : "AWS::Lambda::Function",
             "Properties" : {
-              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "approveCertificate.zip"},
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "lambdas/approveCertificate.zip"},
               "Description" : "Function to be executed as part of Custom Cloud Formation Resource to approve the Public Certificate requested from ACM",
-              "Handler" : "handler",
+              "Handler" : "approveCertificate.handler",
               "MemorySize" : 128,
-              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Role" : { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] },
               "Runtime" : "nodejs8.10",
               "Timeout" : 10
             }
@@ -59,11 +77,11 @@
         "CheckCertificateFunction" : {
             "Type" : "AWS::Lambda::Function",
             "Properties" : {
-              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "checkCertificateApproval.zip"},
+              "Code" : {"S3Bucket" : {"Ref": "BucketName"}, "S3Key" : "lambdas/checkCertificateApproval.zip"},
               "Description" : "Function to be executed as part of Custom Cloud Formation Resource to check for approval of the Public Certificate requested from ACM",
-              "Handler" : "handler",
+              "Handler" : "checkCertificateApproval.handler",
               "MemorySize" : 128,
-              "Role" : {"Ref": "LambdaExecutionRole"},
+              "Role" : { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] },
               "Runtime" : "nodejs8.10",
               "Timeout" : 180
             }
@@ -71,8 +89,22 @@
     },
 
      "Outputs" : {
-        "CertificateRequestFunction" : {"Value" : {"Ref": "CertificateRequestFunction"}},
-        "CertificateApprovalFunction" : {"Value" : {"Ref": "CertificateApprovalFunction"}},
-        "CheckCertificateFunction" : {"Value" : {"Ref": "CheckCertificateFunction"}}
+        "CertificateRequestFunction" : {
+          "Description" : "Function to be executed as part of Custom Cloud Formation Resource to Request a Public Certificate from ACM",
+          "Value" : { "Fn::GetAtt" : ["CertificateRequestFunction", "Arn"] },
+          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-CertificateRequestFunctionArn" }}
+        },
+        
+        "CertificateApprovalFunction" : {
+          "Description" : "Function to be executed as part of Custom Cloud Formation Resource to approve the Public Certificate requested from ACM",
+          "Value" : { "Fn::GetAtt" : ["CertificateApprovalFunction", "Arn"] },
+          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-CertificateApprovalFunctionArn" }}
+        },
+
+        "CheckCertificateFunction" : {
+          "Description" : "Function to be executed as part of Custom Cloud Formation Resource to check for approval of the Public Certificate requested from ACM",
+          "Value" : { "Fn::GetAtt" : ["CheckCertificateFunction", "Arn"] },
+          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-CheckCertificateFunctionArn" }}
+        }
      }
 }

@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
   
-    "Description" : "Cloud Formation for AWS Certificate Request and Approval using DNS Validation Option. This Template uses Custom Resources that will deploy and execute lambda functions to request the certificate and create the Route53 recordsets to validation.",
+    "Description" : "Cloud Formation Template for AWS Certificate Request and Approval using DNS Validation Option. This Template uses Custom Resources that will deploy and execute lambda functions to request the certificate and create the Route53 recordsets to validation.",
   
     "Parameters" : {
       "HostedZone" : {
@@ -21,18 +21,15 @@
       },
       "CertificateRequestLambdaARN" : {
         "Type" : "String",
-        "Description" : "The ARN of lambda request Function",
-        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:RequestPublicCertificate"
+        "Description" : "The ARN of lambda request Function"
       },
       "CertificateApprovalLambdaARN" : {
         "Type" : "String",
-        "Description" : "The ARN of lambda request Function",
-        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:ApproveRequestedCertificate"
+        "Description" : "The ARN of lambda request Function"
       },
-      "CheckCertificateApprovalLambdaARN" : {
+      "CheckCertificateLambdaARN" : {
         "Type" : "String",
-        "Description" : "The ARN of lambda request Function",
-        "Default" : "arn:aws:lambda:sa-east-1:831559051193:function:CheckCertificationStatus"
+        "Description" : "The ARN of lambda request Function"
       }
     },
   
@@ -56,7 +53,7 @@
              "ServiceToken": {"Ref": "CertificateApprovalLambdaARN"},
              "hostedZoneId": {"Ref": "HostedZone"},
              "hostName" : {"Ref": "HostName"},
-             "certificateARN" : {"Ref": "AWSPublicCertificateRequest"}
+             "certificateARN" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "ResourceId"] }
           }
         },
 
@@ -65,15 +62,22 @@
          "Version" : "1.0",
          "DependsOn" : [ "AWSPublicCertificateValidation" ],
          "Properties" : {
-            "ServiceToken": {"Ref": "CheckCertificateApprovalLambdaARN"},
-            "certificateARN" : {"Ref": "AWSPublicCertificateRequest"}
+            "ServiceToken": {"Ref": "CheckCertificateLambdaARN"},
+            "certificateARN" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "ResourceId"] }
          } 
       }
     },
 
      "Outputs" : {
         "CertificateARN" : {
-           "Value" : {"Ref": "AWSPublicCertificateRequest"}
+          "Description" : "CertificateARN",
+          "Value" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "ResourceId"] },
+          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-CertificateARN" }}
+        },
+        "HostedZoneName" : {
+          "Description" : "HostedZoneName",
+          "Value" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "HostedZoneName"] },
+          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-HostedZoneName" }}
         }
      }
 }
