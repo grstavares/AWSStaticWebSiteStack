@@ -56,7 +56,6 @@
   
       "WebsiteCDN" : {
         "Type" : "AWS::CloudFront::Distribution",
-        "DependsOn": ["S3BucketForWebsiteContent"],
         "Properties" : {
            "DistributionConfig" : {
              "Aliases" : [{ "Fn::Join" : [ "", [{ "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }]]}],
@@ -77,6 +76,7 @@
               },
               "Origins" : [{
                 "DomainName" : { "Ref" : "HostBucket" },
+                "S3OriginConfig" : {"OriginAccessIdentity" : ""},
                 "Id" : "S3StaticSite"}]
               }
         } 

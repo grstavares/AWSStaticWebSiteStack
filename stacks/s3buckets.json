@@ -70,7 +70,7 @@
         "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-LogBucket" }}
       },
       "SiteBucket" : {
-        "Value" : { "Fn::Join" : ["", ["http://", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }, {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]},
+        "Value" : { "Fn::Join" : ["", [ { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }, ".s3.amazonaws.com"]]},
         "Description" : "S3 Bucket configured to host content as a website",
         "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-SiteBucket" }}
       }
