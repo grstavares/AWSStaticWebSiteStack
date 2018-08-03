@@ -51,13 +51,27 @@
 	       }
         },
 
-        "WebSiteStack" : {
+        "BucketsStack" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
-                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/website.json" ] ] },
+                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/s3buckets.json" ] ] },
+                 "Parameters" : {
+                     "HostedZone" : {"Ref":"HostedZone"},
+                     "HostName" : {"Ref":"HostName"}
+                 },
+                 "TimeoutInMinutes" : "60"
+            }
+         },
+
+        "DistributionStack" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/distribution.json" ] ] },
                 "Parameters" : {
                     "HostedZoneName" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.HostedZoneName" ] },
                     "HostName" : {"Ref":"HostName"},
+                    "HostBucket" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.SiteBucket" ] },
+                    "LogBucket" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.LogBucket" ] },
                     "certificateARN" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.CertificateARN" ] }
                 },
                 "TimeoutInMinutes" : "60"
@@ -66,9 +80,6 @@
 
     },
     "Outputs": {
-        "FunctionsStack": {"Value": { "Ref" : "FunctionsStack"}},
-        "CertificateStack": {"Value": { "Ref" : "CertificateStack"}},
-        "WebSiteStack": {"Value": { "Ref" : "WebSiteStack"}},
-        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "WebSiteStack", "Outputs.WebsiteURL" ] }}
+        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "DistributionStack", "Outputs.WebsiteURL" ] }}
     }
 }

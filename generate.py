@@ -23,10 +23,9 @@ import time
 
 awscliProfile = None
 masterStack = "stacks/master.json"
-stackList = ["stacks/functions.json", "stacks/certificate.json", "stacks/website.json", "stacks/pipeline.json"]
+stackList = ["stacks/functions.json", "stacks/s3buckets.json", "stacks/certificate.json", "stacks/distribution.json", "stacks/pipeline.json"]
 lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js"]
 filesToClear = []
-#filesList = stackList + lambdaList
 bucketNameSubstitutionPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
 verbose = False
 
@@ -36,6 +35,7 @@ def parseArgs():
     parser.add_argument("-p", "--profile", help="AWS CLI Profile")
     parser.add_argument("-s", "--stack", help="Stack Name", required=True)
     parser.add_argument("-z", "--HostedZoneId", help="HostedZone registred in Route53 (must exist)")
+    parser.add_argument("-r", "--run", help="Run the command in awscli to create the Stack", action="store_true")
     parser.add_argument("-v", "--verbose", help="Show steps", action="store_true")
 
     return parser.parse_args()
@@ -119,23 +119,24 @@ def clearZipped(files):
         print("Cleaning zip files on local dir...")
 
     for file in files:
-        #os.remove(file)
-        print("Must remove " + file)
+        os.remove(file)
 
 
 args = parseArgs()
 awscliProfile = args.profile
+createStack = args.run
 verbose = args.verbose
 
 filestoBeChecked = stackList + lambdaList
 filestoBeChecked.append(masterStack)
 
-print(filestoBeChecked)
 if not checkInputFiles(filestoBeChecked):
     raise ValueError('Stack Files not available on current dir!')
 
 stackName = args.stack
 bucketName = generateBucketName(stackName)
+
+bucketName = "brclouderssite-stackdefinitions-1533305979"
 
 newMasterStack = updateBucketInStack(masterStack, bucketName)
 if newMasterStack != masterStack:
@@ -144,9 +145,10 @@ if newMasterStack != masterStack:
 else:
     stackList.append(masterStack)
 
-createBucket(bucketName)
+#createBucket(bucketName)
 zipped = zipFiles(lambdaList)
 upload(stackList + zipped, bucketName)
 clearZipped(filesToClear)
 
-print("Script Done!")
+message = "Stack Creation for " + stackName + "started" if createStack else "Files uploaded to S3 Bucket->" + bucketName
+print(message)

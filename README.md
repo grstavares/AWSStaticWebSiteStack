@@ -19,8 +19,8 @@ During stack creation a few intermediate resources are needed, mainly to automat
 For stack creation, you'll need a environment with awscli and python3. Clone the repo in this environment and run the script generate.py with the following parameters:
 * -p/--profile      (Optional) awscli profile name;
 * -s/--stack        (Required) cloud formation stack name;
-* -b/--bucket       (Required) existent s3 bucket for stack resources and files;
 * -z/--HostedZoneId  (Required) Route53 Hosted Zone Id to be used as domain name.
+* -r/--run          (Optional) Run the Create Stack Command (If false, it only upload the stack and lambdas to S3 and you can star the creation from console).
 
 ## AWS Costs
 The creation of these AWS resources does not incurr costs. However you will incur the costs as soon as you start serving content from your just created site. For information about the costs, check [the official AWS link for Cloud Front Distribution Pricing] (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontPricing.html)
