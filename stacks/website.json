@@ -87,8 +87,7 @@
                 "SslSupportMethod" : "sni-only"
               },
               "Origins" : [{
-                "CustomOriginConfig" : {"HTTPPort" : "80", "HTTPSPort" : "443", "OriginProtocolPolicy" : "https-only"},
-                "DomainName" : { "Fn::Join" : ["", [{"Ref" : "S3BucketForWebsiteContent"}, {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]},
+                "DomainName" : { "Fn::Join" : ["", [{ "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }, {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]},
                 "Id" : "S3StaticSite"}]
               }
         } 

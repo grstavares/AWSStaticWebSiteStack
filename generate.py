@@ -22,9 +22,12 @@ import zipfile
 import time
 
 awscliProfile = None
-stackList = ["stacks/master.json", "stacks/functions.json", "stacks/certificate.json", "stacks/website.json", "stacks/pipeline.json"]
+masterStack = "stacks/master.json"
+stackList = ["stacks/functions.json", "stacks/certificate.json", "stacks/website.json", "stacks/pipeline.json"]
 lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js"]
-filesList = stackList + lambdaList
+filesToClear = []
+#filesList = stackList + lambdaList
+bucketNameSubstitutionPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
 verbose = False
 
 def parseArgs():
@@ -32,13 +35,12 @@ def parseArgs():
     parser = argparse.ArgumentParser("AWS StaticWeb Site Stack Creation")
     parser.add_argument("-p", "--profile", help="AWS CLI Profile")
     parser.add_argument("-s", "--stack", help="Stack Name", required=True)
-    parser.add_argument("-b", "--bucket", help="S3 Bucket for Stack Resources (must exist)")
     parser.add_argument("-z", "--HostedZoneId", help="HostedZone registred in Route53 (must exist)")
     parser.add_argument("-v", "--verbose", help="Show steps", action="store_true")
 
     return parser.parse_args()
 
-def checkInputFiles():
+def checkInputFiles(filesList):
     
     if verbose:
         print("Checking files on local dir...")
@@ -48,6 +50,43 @@ def checkInputFiles():
         listChecked.append(os.path.isfile(file))
 
     return all(listChecked)
+
+def generateBucketName(stackName):
+    stack = stackName.lower()
+    name = "-stackdefinitions-"
+    timestamp = str(int(time.time()))
+    return stack + name + timestamp
+
+def getSession():
+    if awscliProfile == None:
+        return boto3.Session()
+    else:
+        return boto3.Session(profile_name=awscliProfile)
+
+def createBucket(bucketName):
+    
+    if verbose:
+        print("Creating S3 Bucket " + bucketName + "...")
+
+    region = getSession().region_name
+    s3 = getSession().resource('s3')
+    s3.create_bucket(Bucket=bucketName, CreateBucketConfiguration={'LocationConstraint': region})
+    return
+
+def updateBucketInStack(fileName, bucketName):
+    
+    file = open(fileName, "r")
+    if file.mode == 'r':
+
+        fileContent = file.read()
+        newContent = fileContent.replace(bucketNameSubstitutionPattern, bucketName)
+
+        outputName = masterStack + "-updated"
+        with open(outputName, "w") as output:
+            print(newContent, file=output)
+            return outputName
+
+        return masterStack
 
 def zipFiles(files):
 
@@ -60,24 +99,18 @@ def zipFiles(files):
         with zipfile.ZipFile(zipname, 'w') as zipped:
             zipped.write(file, arcname=os.path.basename(file))
             zipfiles.append(zipname)
+            filesToClear.append(zipname)
 
     return zipfiles
-
-def getS3():
-    if awscliProfile == None:
-        return boto3.resource('s3')
-    else:
-        session = boto3.Session(profile_name=awscliProfile)
-        return session.resource('s3')
 
 def upload(files, bucket):
 
     if verbose:
         print("Uploading files to S3...")
 
-    s3 = getS3()
+    s3 = getSession().resource('s3')
     for file in files:
-        s3object = s3.Object(bucket, file)
+        s3object = s3.Object(bucket, file.replace("-updated",""))
         s3object.put(Body=open(file, 'rb'))
 
 def clearZipped(files):
@@ -86,22 +119,34 @@ def clearZipped(files):
         print("Cleaning zip files on local dir...")
 
     for file in files:
-        os.remove(file)
+        #os.remove(file)
+        print("Must remove " + file)
 
 
 args = parseArgs()
 awscliProfile = args.profile
 verbose = args.verbose
 
-if not checkInputFiles():
+filestoBeChecked = stackList + lambdaList
+filestoBeChecked.append(masterStack)
+
+print(filestoBeChecked)
+if not checkInputFiles(filestoBeChecked):
     raise ValueError('Stack Files not available on current dir!')
 
-bucketName = args.bucket
+stackName = args.stack
+bucketName = generateBucketName(stackName)
+
+newMasterStack = updateBucketInStack(masterStack, bucketName)
+if newMasterStack != masterStack:
+    stackList.append(newMasterStack)
+    filesToClear.append(newMasterStack)
+else:
+    stackList.append(masterStack)
+
+createBucket(bucketName)
 zipped = zipFiles(lambdaList)
 upload(stackList + zipped, bucketName)
-clearZipped(zipped)
+clearZipped(filesToClear)
 
 print("Script Done!")
-# s3 = getS3()
-# for bucket in s3.buckets.all():
-#    print(bucket.name)

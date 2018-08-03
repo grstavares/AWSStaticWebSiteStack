@@ -19,7 +19,8 @@
         },
         "BucketName" : {
             "Type" : "String",
-            "Description" : "The S3 address of Stack Resources and Files"
+            "Description" : "The S3 address of Stack Resources and Files",
+            "Default": "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
         }
       },
 
