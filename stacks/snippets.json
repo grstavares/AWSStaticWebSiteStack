@@ -1,3 +1,0 @@
-{
-    "Value" : { "Fn::Join" : ["", [{ "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }, {"Fn::FindInMap" : [ "Region2S3WebsiteSuffix", {"Ref" : "AWS::Region"}, "Suffix" ]}]]}
-}
