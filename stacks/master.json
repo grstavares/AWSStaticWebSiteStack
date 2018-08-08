@@ -26,7 +26,7 @@
 
     "Resources" : {
 
-        "FunctionsStack" : {
+        "Functions" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/functions.json" ] ] },
@@ -39,12 +39,12 @@
             "Type": "Custom::AWSHostedZoneName",
             "Version" : "1.0",
             "Properties" : {
-               "ServiceToken": { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.GetHostedZoneNameFunction" ] },
+               "ServiceToken": { "Fn::GetAtt" : [ "Functions", "Outputs.GetHostedZoneNameFunction" ] },
                "hostedZoneId": {"Ref": "HostedZone"}
             }
           },
 
-        "CertificateStack" : {
+        "Certificate" : {
 	       "Type" : "AWS::CloudFormation::Stack",
 	       "Properties" : {
                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/certificate.json" ] ] },
@@ -52,15 +52,15 @@
                     "HostedZone" : {"Ref":"HostedZone"},
                     "HostName" : {"Ref":"HostName"},
                     "AlternativeDomains" : {"Ref":"AlternativeDomains"},
-                    "CertificateRequestLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateRequestFunction" ] },
-                    "CertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CertificateApprovalFunction" ] },
-                    "CheckCertificateLambdaARN" : { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.CheckCertificateFunction" ] }
+                    "CertificateRequestLambdaARN" : { "Fn::GetAtt" : [ "Functions", "Outputs.CertificateRequestFunction" ] },
+                    "CertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "Functions", "Outputs.CertificateApprovalFunction" ] },
+                    "CheckCertificateLambdaARN" : { "Fn::GetAtt" : [ "Functions", "Outputs.CheckCertificateFunction" ] }
                 },
                 "TimeoutInMinutes" : "60"
 	       }
         },
 
-        "BucketsStack" : {
+        "Buckets" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/s3buckets.json" ] ] },
@@ -72,27 +72,27 @@
             }
         },
 
-        "PipelineStack" : {
+        "Pipeline" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/pipeline.json" ] ] },
                  "Parameters" : {
-                     "S3BucketForWebSite" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.SiteBucketName" ] }
+                     "S3BucketForWebSite" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketName" ] }
                  },
                  "TimeoutInMinutes" : "60"
             }
         },
 
-        "DistributionStack" : {
+        "Distribution" : {
             "Type" : "AWS::CloudFormation::Stack",
             "Properties" : {
                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/distribution.json" ] ] },
                 "Parameters" : {
-                    "HostedZoneName" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.HostedZoneName" ] },
+                    "HostedZoneName" : { "Fn::GetAtt" : [ "Certificate", "Outputs.HostedZoneName" ] },
                     "HostName" : {"Ref":"HostName"},
-                    "HostBucket" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.SiteBucket" ] },
-                    "LogBucket" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.LogBucket" ] },
-                    "certificateARN" : { "Fn::GetAtt" : [ "CertificateStack", "Outputs.CertificateARN" ] }
+                    "HostBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] },
+                    "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucket" ] },
+                    "certificateARN" : { "Fn::GetAtt" : [ "Certificate", "Outputs.CertificateARN" ] }
                 },
                 "TimeoutInMinutes" : "60"
             }
@@ -100,8 +100,9 @@
 
     },
     "Outputs": {
-        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "DistributionStack", "Outputs.WebsiteURL" ] }},
-        "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "PipelineStack", "Outputs.RepoCloneHttpUrl" ] }},
-        "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "PipelineStack", "Outputs.RepoCloneSSHUrl" ] }}
+        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "Distribution", "Outputs.WebsiteURL" ] }},
+        "S3SiteBucket" : {"Value" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] }},
+        "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneHttpUrl" ] }},
+        "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneSSHUrl" ] }}
     }
 }
