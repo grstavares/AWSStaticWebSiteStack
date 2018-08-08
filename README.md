@@ -37,6 +37,7 @@ After the stack creation you can use any Single Page Application Framework based
 8. When tested and ready for deployment, merge the feature/development branch in master and push to the remote repo;
 9. Wait for the project build (you can monitor the build from CodeBuild Console our aws-cli);
 10. From the Stack Outputs, copy the WebsiteURL and open it in a browser;
+
 \* If you use the same folder of the the stack, keep in mind that you'll need to have two different remote repos in the same local repo.
 
 ## AWS Costs
