@@ -22,7 +22,7 @@ For stack creation, you'll need a environment with awscli and python3. Clone the
 * -p/--profile      (Optional) awscli profile name;
 * -s/--stack        (Required) cloud formation stack name;
 * -z/--HostedZoneId  (Required) Route53 Hosted Zone Id to be used as domain name.
-* -r/--run          (Optional) Run the Create Stack Command (If false, it only upload the stack and lambdas to S3 and you can star the creation from console).
+* -r/--run          (NOT IMPLEMENTED) Run the Create Stack Command (If false, it only upload the stack and lambdas to S3 and you can start the creation from console).
 
 ## Post Usage
 After the stack creation you can use any Single Page Application Framework based on npm to deploy your site. These are the steps to integrate you development workflow to the StaticWebSite Pipeline:
@@ -37,10 +37,10 @@ After the stack creation you can use any Single Page Application Framework based
 8. When tested and ready for deployment, merge the feature/development branch in master and push to the remote repo;
 9. Wait for the project build (you can monitor the build from CodeBuild Console our aws-cli);
 10. From the Stack Outputs, copy the WebsiteURL and open it in a browser;
-* If you use the same folder of the the stack, keep in mind that you'll need to have two different remote repos in the same local repo.
+\* If you use the same folder of the the stack, keep in mind that you'll need to have two different remote repos in the same local repo.
 
 ## AWS Costs
-The creation of these AWS resources does not incurr costs. However you will incur the costs as soon as you start serving content from your just created site. For information about the costs, check [the official AWS link for Cloud Front Distribution Pricing] (https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontPricing.html)
+The creation of these AWS resources does not incurr costs. However you will incur the costs as soon as you start serving content from your just created site. For information about the costs, check [the official AWS link for Cloud Front Distribution Pricing](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/CloudFrontPricing.html)
 
 ## AWS Security and Roles
 For the stack creation, you must use a IAM User with permissions to:
