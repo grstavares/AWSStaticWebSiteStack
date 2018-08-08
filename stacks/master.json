@@ -35,6 +35,15 @@
             }
         },
 
+        "HostedZoneNameFunction" : {
+            "Type": "Custom::AWSHostedZoneName",
+            "Version" : "1.0",
+            "Properties" : {
+               "ServiceToken": { "Fn::GetAtt" : [ "FunctionsStack", "Outputs.GetHostedZoneNameFunction" ] },
+               "hostedZoneId": {"Ref": "HostedZone"}
+            }
+          },
+
         "CertificateStack" : {
 	       "Type" : "AWS::CloudFormation::Stack",
 	       "Properties" : {
@@ -56,12 +65,23 @@
             "Properties" : {
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/s3buckets.json" ] ] },
                  "Parameters" : {
-                     "HostedZone" : {"Ref":"HostedZone"},
+                     "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
                      "HostName" : {"Ref":"HostName"}
                  },
                  "TimeoutInMinutes" : "60"
             }
-         },
+        },
+
+        "PipelineStack" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Properties" : {
+                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/pipeline.json" ] ] },
+                 "Parameters" : {
+                     "S3BucketForWebSite" : { "Fn::GetAtt" : [ "BucketsStack", "Outputs.SiteBucketName" ] }
+                 },
+                 "TimeoutInMinutes" : "60"
+            }
+        },
 
         "DistributionStack" : {
             "Type" : "AWS::CloudFormation::Stack",
@@ -80,6 +100,8 @@
 
     },
     "Outputs": {
-        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "DistributionStack", "Outputs.WebsiteURL" ] }}
+        "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "DistributionStack", "Outputs.WebsiteURL" ] }},
+        "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "PipelineStack", "Outputs.RepoCloneHttpUrl" ] }},
+        "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "PipelineStack", "Outputs.RepoCloneSSHUrl" ] }}
     }
 }

@@ -22,19 +22,22 @@ import zipfile
 import time
 
 awscliProfile = None
+verbose = False
+
 masterStack = "stacks/master.json"
 stackList = ["stacks/functions.json", "stacks/s3buckets.json", "stacks/certificate.json", "stacks/distribution.json", "stacks/pipeline.json"]
-lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js"]
+lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js", "lambdas/getHostedZoneName.js"]
 filesToClear = []
-bucketNameSubstitutionPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
-verbose = False
+
+stackBucketsPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
+siteBucketPattern = "{-INSERT BUCKET NAME FOR STATIC WEBSITE HERE-}"
+siteStackPattern = "{-INSERT ANGULAR PROJECT NAME HERE-}"
 
 def parseArgs():
 
     parser = argparse.ArgumentParser("AWS StaticWeb Site Stack Creation")
     parser.add_argument("-p", "--profile", help="AWS CLI Profile")
     parser.add_argument("-s", "--stack", help="Stack Name", required=True)
-    parser.add_argument("-z", "--HostedZoneId", help="HostedZone registred in Route53 (must exist)")
     parser.add_argument("-r", "--run", help="Run the command in awscli to create the Stack", action="store_true")
     parser.add_argument("-v", "--verbose", help="Show steps", action="store_true")
 
@@ -79,7 +82,7 @@ def updateBucketInStack(fileName, bucketName):
     if file.mode == 'r':
 
         fileContent = file.read()
-        newContent = fileContent.replace(bucketNameSubstitutionPattern, bucketName)
+        newContent = fileContent.replace(stackBucketsPattern, bucketName)
 
         outputName = masterStack + "-updated"
         with open(outputName, "w") as output:
@@ -87,6 +90,22 @@ def updateBucketInStack(fileName, bucketName):
             return outputName
 
         return masterStack
+
+def updateBucketInBuildSpec(fileName, bucketName, stackName):
+    
+    file = open(fileName, "r")
+    if file.mode == 'r':
+
+        fileContent = file.read()
+        newContent = fileContent.replace(siteBucketPattern, bucketName)
+        newContent = newContent.replace(siteStackPattern, stackName)
+
+        outputName = "buildspec.yml"
+        with open(outputName, "w") as output:
+            print(newContent, file=output)
+            return outputName
+
+        return fileName
 
 def zipFiles(files):
 
@@ -136,8 +155,6 @@ if not checkInputFiles(filestoBeChecked):
 stackName = args.stack
 bucketName = generateBucketName(stackName)
 
-bucketName = "brclouderssite-stackdefinitions-1533305979"
-
 newMasterStack = updateBucketInStack(masterStack, bucketName)
 if newMasterStack != masterStack:
     stackList.append(newMasterStack)
@@ -145,7 +162,7 @@ if newMasterStack != masterStack:
 else:
     stackList.append(masterStack)
 
-#createBucket(bucketName)
+createBucket(bucketName)
 zipped = zipFiles(lambdaList)
 upload(stackList + zipped, bucketName)
 clearZipped(filesToClear)

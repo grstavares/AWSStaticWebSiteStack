@@ -75,6 +75,12 @@
         "Value" : { "Fn::Join" : ["", [ { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }, ".s3.amazonaws.com"]]},
         "Description" : "S3 Bucket configured to host content as a website",
         "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-SiteBucket" }}
+      },
+
+      "SiteBucketName" : {
+        "Value" : { "Fn::Join" : [ "", [ "", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] },
+        "Description" : "S3 Bucket configured to host content as a website",
+        "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-SiteBucketName" }}
       }
 
     }
