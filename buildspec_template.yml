@@ -2,6 +2,7 @@ version: 0.2
 env:
     variables:
         S3_BUCKET: {-INSERT BUCKET NAME FOR STATIC WEBSITE HERE-}
+        BUILD_FOLDER: {-INSERT THE NAME OF THE BUILD FOLDER HERE-}
         BUILD_ENV: "prod"
 phases:
     install:
@@ -15,7 +16,7 @@ phases:
             - ng build --${BUILD_ENV}
     post_build:
          commands:
-            - aws s3 cp dist/{-INSERT ANGULAR PROJECT NAME HERE-} s3://${S3_BUCKET} --recursive --acl public-read
+            - aws s3 cp ${BUILD_FOLDER} s3://${S3_BUCKET} --recursive --acl public-read
             - echo Build completed on `date`
 artifacts:
     files:
