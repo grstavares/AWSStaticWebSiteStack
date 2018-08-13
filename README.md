@@ -21,7 +21,8 @@ During stack creation a few intermediate resources are needed, mainly to automat
 For stack creation, you'll need a environment with awscli and python3. Clone the repo in this environment and run the script generate.py with the following parameters:
 * -p/--profile      (Optional) awscli profile name;
 * -s/--stack        (Required) cloud formation stack name;
-* -z/--HostedZoneId  (Required) Route53 Hosted Zone Id to be used as domain name.
+* -z/--HostedZoneId (Required) Route53 Hosted Zone Id to be used as domain name.
+* -n/--HostName     (Required) Host Name for WebSite.
 * -r/--run          (NOT IMPLEMENTED) Run the Create Stack Command (If false, it only upload the stack and lambdas to S3 and you can start the creation from console).
 
 ## Post Usage
@@ -47,6 +48,7 @@ The creation of these AWS resources does not incurr costs. However you will incu
 For the stack creation, you must use a IAM User with permissions to:
 * Create/Delete IAM Service Roles;
 * Create/Update/Delete S3 Buckets and Bucket Configurations (ACL, StaticWebSite, Logging);
+* Create/Update/Delete S3 Objects;
 * Create/Update/Delete Lambda Functions;
 * Create/Update/Delete CodeCommit Repositories/Codepipeline Pipelines/CodeBuild projects;
 * Create/Update/Delete Cloudwatch Events/Event Rules;
@@ -59,7 +61,12 @@ For this, you can start the stack creation with a user with AdministratorAccess 
 ### CloudFront cache
 When in development phase, it is better to test your application using the S3 static web site url, instead of WebSiteUrl that is configured to use CloudFront. That option is best because the CloudFront was configured to cache the requested files for 86400 seconds (1 day). Using the S3 Static Web Site address you can get the updated files as soon as the CodeBuild project ends.
 
-If you want to test your website using the WebSiteURL, or if you want to change the cache interval for any reason, you need to change the parameter CACHE_CONTROL in buildspec.yml file. Just keep in mind that this value will be used for all the next builds and only will be available after the previous cache interval where expired or the caches were invalidated (<- this costs money)!
+You must consider this cache interval in the case of current deployment of your website. If you need imediate deployment over the CloudFront edge locations you must invalidate the cached objects after deployment or change the cache interval used in distribution. Considering that the cache invalidation will incurr costs, this procedure was not implemented in the stack. You must perform it manually.
+
+If you want to change the cache interval for any reason, you just need to change the parameter CACHE_CONTROL in buildspec.yml file. Just keep in mind that this value will be used for all the next builds and only will be available after the previous cache interval where expired or the caches were invalidated (again, cache invalidation costs money)!
+
+## Warning
+If you delete the stack in CloudFormation all the resources in the bukects will be cleared by the stack process deletion.
 
 ## Nexts Steps
 1. Implement CORS options for Static Web Site;

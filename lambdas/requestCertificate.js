@@ -63,7 +63,7 @@ function requestCertificate(event, context, info) {
       } else {
         var arn = data.CertificateArn;
         var zoneName = info.HostedZoneName.substring(0, info.HostedZoneName.length - 1)
-        sendResponse(event, context, "SUCCESS", arn, {"Message" : "Resource creation successful!", "ResourceId":arn, "HostedZoneName":zoneName});
+        sendResponse(event, context, "SUCCESS", arn, {"Message" : "Resource creation successful!", "ResourceId":arn});
       }
       
     });

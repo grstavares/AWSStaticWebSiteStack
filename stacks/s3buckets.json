@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
   
-    "Description" : "Cloud Formation Template for Static Website using S3, CDN and Route53 resource records.",
+    "Description" : "Cloud Formation Template for Site and Log Buckets for StaticWebSite on S3",
   
     "Parameters" : {
         "HostedZoneName" : {
@@ -13,6 +13,10 @@
           "Description" : "The hostname that will be appended to HostZone to create the Site",
           "AllowedPattern" : "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
           "ConstraintDescription" : "must be a valid host name."
+        },
+        "ClearBucketsFunctionARN" : {
+          "Type" : "String",
+          "Description" : "The ARN of lambda Function to clear S3 Buckets on Resource Deletion"
         }
     },
   
@@ -58,6 +62,16 @@
           "AccessControl" : "PublicRead",
           "LoggingConfiguration" : { "DestinationBucketName" : { "Fn::Join" : [ "", [ "", "logs.", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] }, "LogFilePrefix" : "bucket/"},
           "WebsiteConfiguration" : {"IndexDocument" : "index.html", "ErrorDocument" : "error.html"}
+        }
+      },
+
+      "S3BucketsClearance" : {
+        "Type": "Custom::BucketClearanceOnResourceDeletion",
+        "Version" : "1.0",
+        "Properties" : {
+           "ServiceToken": {"Ref": "ClearBucketsFunctionARN"},
+           "siteBucket": { "Fn::Join" : [ "", [ "", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] },
+           "logsBucket": { "Fn::Join" : [ "", [ "logs.", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] }
         }
       }
   

@@ -42,7 +42,7 @@
                "ServiceToken": { "Fn::GetAtt" : [ "Functions", "Outputs.GetHostedZoneNameFunction" ] },
                "hostedZoneId": {"Ref": "HostedZone"}
             }
-          },
+        },
 
         "Certificate" : {
 	       "Type" : "AWS::CloudFormation::Stack",
@@ -66,7 +66,8 @@
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/s3buckets.json" ] ] },
                  "Parameters" : {
                      "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
-                     "HostName" : {"Ref":"HostName"}
+                     "HostName" : {"Ref":"HostName"},
+                     "ClearBucketsFunctionARN": { "Fn::GetAtt" : [ "Functions", "Outputs.ClearBucketsFunction" ] }
                  },
                  "TimeoutInMinutes" : "60"
             }
@@ -88,7 +89,7 @@
             "Properties" : {
                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/distribution.json" ] ] },
                 "Parameters" : {
-                    "HostedZoneName" : { "Fn::GetAtt" : [ "Certificate", "Outputs.HostedZoneName" ] },
+                    "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
                     "HostName" : {"Ref":"HostName"},
                     "HostBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] },
                     "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucket" ] },

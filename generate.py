@@ -26,7 +26,7 @@ verbose = False
 
 masterStack = "stacks/master.json"
 stackList = ["stacks/functions.json", "stacks/s3buckets.json", "stacks/certificate.json", "stacks/distribution.json", "stacks/pipeline.json"]
-lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js", "lambdas/getHostedZoneName.js"]
+lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js", "lambdas/getHostedZoneName.js", "lambdas/clearBuckets.js"]
 filesToClear = []
 
 stackBucketsPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
@@ -38,6 +38,8 @@ def parseArgs():
     parser = argparse.ArgumentParser("AWS StaticWeb Site Stack Creation")
     parser.add_argument("-p", "--profile", help="AWS CLI Profile")
     parser.add_argument("-s", "--stack", help="Stack Name", required=True)
+    parser.add_argument("-z", "--HostedZoneId", help="AWS route53 HostedZoneId")
+    parser.add_argument("-n", "--HostName", help="HostName for WebSite")
     parser.add_argument("-r", "--run", help="Run the command in awscli to create the Stack", action="store_true")
     parser.add_argument("-v", "--verbose", help="Show steps", action="store_true")
 
@@ -130,7 +132,7 @@ def upload(files, bucket):
     s3 = getSession().resource('s3')
     for file in files:
         s3object = s3.Object(bucket, file.replace("-updated",""))
-        s3object.put(Body=open(file, 'rb'))
+        s3object.put(Body=open(file, 'rb'), ACL='bucket-owner-full-control')
 
 def clearZipped(files):
 
@@ -140,6 +142,36 @@ def clearZipped(files):
     for file in files:
         os.remove(file)
 
+
+def startStackCreation(stackName, stackBucket, hostedZoneId, hostName):
+
+    if not hostedZoneId:
+        raise ValueError('Stack can not be created with a empty HostedZoneId!')
+
+    if not hostName:
+        raise ValueError('Stack can not be created with a empty HosteName!')
+
+    if verbose:
+        print("Starting Stack creation...")
+
+    session = getSession()
+    region = session.region_name
+    templateUrl = "https://" + stackBucket + ".s3.amazonaws.com/stacks/master.json"
+    print(bucketUrl)
+
+    cloudformation = session.client('cloudformation')
+    response = cloudformation.create_stack(
+        StackName = stackName,
+        TemplateURL = templateUrl,
+        Parameters=[
+            {'ParameterKey': 'HostedZone', 'ParameterValue': hostedZoneId, 'UsePreviousValue': True},
+            {'ParameterKey': 'HostName', 'ParameterValue': hostName, 'UsePreviousValue': True},
+            {'ParameterKey': 'AlternativeDomains', 'ParameterValue': 'none', 'UsePreviousValue': True},
+            {'ParameterKey': 'BucketName', 'ParameterValue': stackBucket, 'UsePreviousValue': True}
+        ],
+        TimeoutInMinutes=60,
+        Capabilities=['CAPABILITY_NAMED_IAM'],
+    )
 
 args = parseArgs()
 awscliProfile = args.profile
@@ -167,5 +199,8 @@ zipped = zipFiles(lambdaList)
 upload(stackList + zipped, bucketName)
 clearZipped(filesToClear)
 
-message = "Stack Creation for " + stackName + "started" if createStack else "Files uploaded to S3 Bucket->" + bucketName
+if createStack:
+    startStackCreation(stackName, bucketName, args.HostedZoneId, args.HostName)
+
+message = "Stack Creation for " + stackName + " started!" if createStack else "Files uploaded to S3 Bucket-> " + bucketName
 print(message)

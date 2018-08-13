@@ -17,7 +17,7 @@ exports.handler = (event, context, callback) => {
 
     var numberOfCalls = event.numberOfCalls;
     if (numberOfCalls == undefined) {numberOfCalls = process.env.INVOCATION_LIMIT;}
-    if (numberOfCalls == undefined) {numberOfCalls = 5;}
+    if (numberOfCalls == undefined) {numberOfCalls = 10;}
 
     if (numberOfCalls > 0) {
 

@@ -73,11 +73,6 @@
           "Description" : "CertificateARN",
           "Value" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "ResourceId"] },
           "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-CertificateARN" }}
-        },
-        "HostedZoneName" : {
-          "Description" : "HostedZoneName",
-          "Value" : { "Fn::GetAtt" : ["AWSPublicCertificateRequest", "HostedZoneName"] },
-          "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-HostedZoneName" }}
         }
      }
 }
