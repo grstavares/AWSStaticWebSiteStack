@@ -1,11 +1,15 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
 
+    "Description" : "Cloud Formation Template for a complete AWS Static Web Site (S3 + Route53 + CloudFront + Repository + Build and Pipeline processes)",
+
     "Parameters" : {
+
         "HostedZone" : {
           "Type" : "AWS::Route53::HostedZone::Id",
           "Description" : "The ID of an existing Amazon Route 53 hosted zone"
         },
+
         "HostName" : {
           "Type" : "String",
           "Description" : "The HostName address",
@@ -13,16 +17,40 @@
           "AllowedPattern" : "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
           "ConstraintDescription" : "must be a valid host name for url."
         },
+
         "AlternativeDomains" : {
           "Type" : "String",
           "Description" : "Alternative Domains to be configured in the Certificate"
         },
+
         "BucketName" : {
             "Type" : "String",
             "Description" : "The S3 address of Stack Resources and Files",
             "Default": "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
+        },
+
+        "CreatePipeline" : {
+            "Type" : "String",
+            "AllowedValues": ["YES", "NO"],
+            "Description" : "Must Create the Repositoty, Build project and Pipeline?",
+            "Default": "YES"
+        },
+
+        "RetainBucketsOnDeletion" : {
+            "Type" : "String",
+            "AllowedValues": ["YES", "NO"],
+            "Description" : "Must retain WebSite and Log Bucket on Stack Deletion?",
+            "Default": "NO"
         }
-      },
+
+    },
+
+    "Conditions" : {
+
+        "BuildPipeline" : {"Fn::Equals" : [{"Ref" : "CreatePipeline"}, "YES"]},
+        "RetainBuckets" : {"Fn::Equals" : [{"Ref" : "RetainBucketsOnDeletion"}, "YES"]}
+
+    },
 
     "Resources" : {
 
@@ -67,7 +95,7 @@
                  "Parameters" : {
                      "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
                      "HostName" : {"Ref":"HostName"},
-                     "ClearBucketsFunctionARN": { "Fn::GetAtt" : [ "Functions", "Outputs.ClearBucketsFunction" ] }
+                     "RetainBucketsOnDeletion" : {"Ref":"RetainBucketsOnDeletion"}
                  },
                  "TimeoutInMinutes" : "60"
             }
@@ -75,6 +103,7 @@
 
         "Pipeline" : {
             "Type" : "AWS::CloudFormation::Stack",
+            "Condition": "BuildPipeline",
             "Properties" : {
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/pipeline.json" ] ] },
                  "Parameters" : {
@@ -97,13 +126,30 @@
                 },
                 "TimeoutInMinutes" : "60"
             }
+        },
+
+        "BucketClerance" : {
+            "Type" : "AWS::CloudFormation::Stack",
+            "Condition": "RetainBuckets",
+            "DependsOn": ["Buckets"],
+            "Properties" : {
+                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/clearbuckets.json" ] ] },
+                 "Parameters" : {
+                    "SiteBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketName" ] },
+                    "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucketName" ] },
+                    "ClearBucketsFunctionARN": { "Fn::GetAtt" : [ "Functions", "Outputs.ClearBucketsFunction" ] }
+                 },
+                 "TimeoutInMinutes" : "60"
+            }
         }
 
     },
+
     "Outputs": {
         "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "Distribution", "Outputs.WebsiteURL" ] }},
         "S3SiteBucket" : {"Value" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] }},
-        "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneHttpUrl" ] }},
-        "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneSSHUrl" ] }}
+        "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneHttpUrl" ] }, "Condition": "BuildPipeline"},
+        "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneSSHUrl" ] }, "Condition": "BuildPipeline"}
     }
+
 }

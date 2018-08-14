@@ -14,10 +14,19 @@
           "AllowedPattern" : "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
           "ConstraintDescription" : "must be a valid host name."
         },
-        "ClearBucketsFunctionARN" : {
-          "Type" : "String",
-          "Description" : "The ARN of lambda Function to clear S3 Buckets on Resource Deletion"
+
+        "RetainBucketsOnDeletion" : {
+            "Type" : "String",
+            "AllowedValues": ["YES", "NO"],
+            "Description" : "Must retain WebSite and Log Bucket on Stack Deletion?",
+            "Default": "NO"
         }
+    },
+
+    "Conditions" : {
+
+      "RetainBuckets" : {"Fn::Equals" : [{"Ref" : "RetainBucketsOnDeletion"}, "YES"]}
+
     },
   
     "Mappings" : {
@@ -63,18 +72,8 @@
           "LoggingConfiguration" : { "DestinationBucketName" : { "Fn::Join" : [ "", [ "", "logs.", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] }, "LogFilePrefix" : "bucket/"},
           "WebsiteConfiguration" : {"IndexDocument" : "index.html", "ErrorDocument" : "error.html"}
         }
-      },
-
-      "S3BucketsClearance" : {
-        "Type": "Custom::BucketClearanceOnResourceDeletion",
-        "Version" : "1.0",
-        "Properties" : {
-           "ServiceToken": {"Ref": "ClearBucketsFunctionARN"},
-           "siteBucket": { "Fn::Join" : [ "", [ "", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] },
-           "logsBucket": { "Fn::Join" : [ "", [ "logs.", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] }
-        }
       }
-  
+
     },
   
     "Outputs" : {
@@ -95,6 +94,12 @@
         "Value" : { "Fn::Join" : [ "", [ "", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] },
         "Description" : "S3 Bucket configured to host content as a website",
         "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-SiteBucketName" }}
+      },
+
+      "LogBucketName" : {
+        "Value" : { "Fn::Join" : [ "", [ "logs.", { "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" } ] ] },
+        "Description" : "S3 Bucket Name for logging",
+        "Export" : {"Name" : {"Fn::Sub": "${AWS::StackName}-LogBucketName" }}
       }
 
     }

@@ -9,57 +9,58 @@ exports.handler = function(event, context) {
     }
 
     console.log("clearBuckets for =>" + JSON.stringify(event));
-    var siteBucket = event.ResourceProperties.siteBucket;
-    var logsBucket = event.ResourceProperties.logsBucket;
+    var bucketName = event.ResourceProperties.bucketName;
 
-    if (clearBuckets(event, context, [logsBucket, siteBucket])) {
-        
-        sendResponse(event, context, "SUCCESS", resourceName, {"Message" : "Buckets Cleared!"});
-        
-    }
+    getBucketObjects(bucketName, function(err, data) {
+
+        if (err == null) {
+            
+            clearBucket(data, function(err, data) {
+
+                if (err == null) {sendResponse(event, context, "SUCCESS", resourceName, {"Message" : "Buckets Cleared!"});
+                } else {sendResponse(event, context, "FAILED", resourceName, {"Message" : err});}
+
+            });
+
+        } else {sendResponse(event, context, "FAILED", resourceName, {"Message" : err});}
+
+    });
 
 };
 
-function clearBuckets(event, context, buckets) {
-    
+function getBucketObjects(bucketName, getHandler) {
+
     var s3 = new aws.S3();
+    var listParam = {"Bucket": bucketName};
     
-    for (var idx in buckets) {
-        
-        var bucket = buckets[idx];
-        var listParam = {"Bucket": bucket};
-        console.log(listParam);
-        
-        s3.listObjects(listParam, function (err, data) {
-    
-            if (err) {
-                sendResponse(event, context, "FAILED", resourceName, {"Message" : err});
-                return false;
-            }
-    
+    s3.listObjects(listParam, function (err, data) {
+
+        if (err == null) {
+
             var items = data.Contents;
             var keys = items.map(item => {return {"Key": item.Key}});
             var param = {
-                "Bucket": bucket,
+                "Bucket": bucketName,
                 "Delete": {"Objects": keys, "Quiet": true}
             };
+
+            getHandler(null, param);
+
+        } else { getHandler(err, null); }
+
+    });
+}
+
+function clearBucket(objectList, clearHandler) {
     
-            console.log("Removing " + keys.length + " objects in Bucket " + bucket);
-            
-            s3.deleteObjects(param, function(err, data) {
+    var s3 = new aws.S3();
+    s3.deleteObjects(objectList, function(err, data) {
                 
-            if (err) {
-                sendResponse(event, context, "FAILED", resourceName, {"Message" : err});
-                return false;
-            }
-                
-            return true;
-                
-            });
-    
-        });
-        
-    }
+        if (err == null) {
+            clearHandler(null, data);
+        } else {clearHandler(err, null);}
+
+    });
     
 }
 

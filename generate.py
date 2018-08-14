@@ -25,7 +25,7 @@ awscliProfile = None
 verbose = False
 
 masterStack = "stacks/master.json"
-stackList = ["stacks/functions.json", "stacks/s3buckets.json", "stacks/certificate.json", "stacks/distribution.json", "stacks/pipeline.json"]
+stackList = ["stacks/functions.json", "stacks/s3buckets.json", "stacks/certificate.json", "stacks/distribution.json", "stacks/pipeline.json", "stacks/clearbuckets.json"]
 lambdaList = ["lambdas/requestCertificate.js", "lambdas/approveCertificate.js", "lambdas/checkCertificateApproval.js", "lambdas/getHostedZoneName.js", "lambdas/clearBuckets.js"]
 filesToClear = []
 
@@ -36,12 +36,13 @@ siteStackPattern = "{-INSERT ANGULAR PROJECT NAME HERE-}"
 def parseArgs():
 
     parser = argparse.ArgumentParser("AWS StaticWeb Site Stack Creation")
-    parser.add_argument("-p", "--profile", help="AWS CLI Profile")
-    parser.add_argument("-s", "--stack", help="Stack Name", required=True)
+    parser.add_argument("-s", "--Stack", help="Stack Name", required=True)
     parser.add_argument("-z", "--HostedZoneId", help="AWS route53 HostedZoneId")
     parser.add_argument("-n", "--HostName", help="HostName for WebSite")
-    parser.add_argument("-r", "--run", help="Run the command in awscli to create the Stack", action="store_true")
-    parser.add_argument("-v", "--verbose", help="Show steps", action="store_true")
+    parser.add_argument("-b", "--BuildPipeline", help="Create the Repository, Build Project and Pipeline for Continuous Deployment", action="store_true")
+    parser.add_argument("-r", "--Run", help="Run the command in awscli to create the Stack", action="store_true")
+    parser.add_argument("-p", "--Profile", help="AWS CLI Profile")
+    parser.add_argument("-v", "--Verbose", help="Show steps", action="store_true")
 
     return parser.parse_args()
 
@@ -143,7 +144,7 @@ def clearZipped(files):
         os.remove(file)
 
 
-def startStackCreation(stackName, stackBucket, hostedZoneId, hostName):
+def startStackCreation(stackName, stackBucket, hostedZoneId, hostName, buildPipeline):
 
     if not hostedZoneId:
         raise ValueError('Stack can not be created with a empty HostedZoneId!')
@@ -157,7 +158,6 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName):
     session = getSession()
     region = session.region_name
     templateUrl = "https://" + stackBucket + ".s3.amazonaws.com/stacks/master.json"
-    print(bucketUrl)
 
     cloudformation = session.client('cloudformation')
     response = cloudformation.create_stack(
@@ -167,16 +167,17 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName):
             {'ParameterKey': 'HostedZone', 'ParameterValue': hostedZoneId, 'UsePreviousValue': True},
             {'ParameterKey': 'HostName', 'ParameterValue': hostName, 'UsePreviousValue': True},
             {'ParameterKey': 'AlternativeDomains', 'ParameterValue': 'none', 'UsePreviousValue': True},
-            {'ParameterKey': 'BucketName', 'ParameterValue': stackBucket, 'UsePreviousValue': True}
+            {'ParameterKey': 'BucketName', 'ParameterValue': stackBucket, 'UsePreviousValue': True},
+            {'ParameterKey': 'CreatePipeline', 'ParameterValue': buildPipeline, 'UsePreviousValue': True}
         ],
         TimeoutInMinutes=60,
         Capabilities=['CAPABILITY_NAMED_IAM'],
     )
 
 args = parseArgs()
-awscliProfile = args.profile
-createStack = args.run
-verbose = args.verbose
+awscliProfile = args.Profile
+createStack = args.Run
+verbose = args.Verbose
 
 filestoBeChecked = stackList + lambdaList
 filestoBeChecked.append(masterStack)
@@ -184,7 +185,7 @@ filestoBeChecked.append(masterStack)
 if not checkInputFiles(filestoBeChecked):
     raise ValueError('Stack Files not available on current dir!')
 
-stackName = args.stack
+stackName = args.Stack
 bucketName = generateBucketName(stackName)
 
 newMasterStack = updateBucketInStack(masterStack, bucketName)
@@ -200,7 +201,7 @@ upload(stackList + zipped, bucketName)
 clearZipped(filesToClear)
 
 if createStack:
-    startStackCreation(stackName, bucketName, args.HostedZoneId, args.HostName)
+    startStackCreation(stackName, bucketName, args.HostedZoneId, args.HostName, args.BuildPipeline)
 
 message = "Stack Creation for " + stackName + " started!" if createStack else "Files uploaded to S3 Bucket-> " + bucketName
 print(message)
