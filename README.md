@@ -19,15 +19,15 @@ During stack creation a few intermediate resources are needed, mainly to automat
 
 ## Usage
 For stack creation, you'll need a environment with awscli and python3. Clone the repo in this environment and run the script generate.py with the following parameters:
+
 |Option|Details|Explanation|
-|-------|------|------|
+| --- | --- | --- |
 |-s/--stack|(Required)|Cloud Formation stack name;|
 |-z/--HostedZoneId|(Required, if run is true)|Route53 Hosted Zone Id to be used as domain name;|
 |-n/--HostName|(Required, if run is true)|Host Name for WebSite;|
 |-b/--BuildPipeline|(Optional)|Create CodeCommit Repository, CodeBuild Project and CodePipeline for Continuous Deployment;|
 |-p/--profile|(Optional)|awscli profile name;|
 |-r/--run|True if present|Run the Create Stack Command (If false, it only upload the stack and functions to S3 and you can start the creation from console).|
-|-------|------|------|
 
 ## Post Usage
 After the stack creation you can use any Single Page Application Framework based on npm to deploy your site. These are the steps to integrate you development workflow to the StaticWebSite Pipeline:
