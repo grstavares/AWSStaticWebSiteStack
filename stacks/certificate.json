@@ -1,7 +1,7 @@
 {
     "AWSTemplateFormatVersion" : "2010-09-09",
   
-    "Description" : "Cloud Formation Template for AWS Certificate Request and Approval using DNS Validation Option. This Template depends on Lambda Functions for Certificate Request and Approval.",
+    "Description" : "Cloud Formation Template for ACM Certificate Request and Approval. This Template depends on Lambda Functions for Certificate Request and Approval.",
   
     "Parameters" : {
       "HostedZone" : {

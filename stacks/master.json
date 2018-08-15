@@ -34,21 +34,13 @@
             "AllowedValues": ["YES", "NO"],
             "Description" : "Must Create the Repositoty, Build project and Pipeline?",
             "Default": "YES"
-        },
-
-        "RetainBucketsOnDeletion" : {
-            "Type" : "String",
-            "AllowedValues": ["YES", "NO"],
-            "Description" : "Must retain WebSite and Log Bucket on Stack Deletion?",
-            "Default": "NO"
         }
 
     },
 
     "Conditions" : {
 
-        "BuildPipeline" : {"Fn::Equals" : [{"Ref" : "CreatePipeline"}, "YES"]},
-        "RetainBuckets" : {"Fn::Equals" : [{"Ref" : "RetainBucketsOnDeletion"}, "YES"]}
+        "BuildPipeline" : {"Fn::Equals" : [{"Ref" : "CreatePipeline"}, "YES"]}
 
     },
 
@@ -94,8 +86,7 @@
                  "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/s3buckets.json" ] ] },
                  "Parameters" : {
                      "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
-                     "HostName" : {"Ref":"HostName"},
-                     "RetainBucketsOnDeletion" : {"Ref":"RetainBucketsOnDeletion"}
+                     "HostName" : {"Ref":"HostName"}
                  },
                  "TimeoutInMinutes" : "60"
             }
@@ -120,26 +111,11 @@
                 "Parameters" : {
                     "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
                     "HostName" : {"Ref":"HostName"},
-                    "HostBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] },
-                    "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucket" ] },
+                    "HostBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketUrl" ] },
+                    "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucketUrl" ] },
                     "certificateARN" : { "Fn::GetAtt" : [ "Certificate", "Outputs.CertificateARN" ] }
                 },
                 "TimeoutInMinutes" : "60"
-            }
-        },
-
-        "BucketClerance" : {
-            "Type" : "AWS::CloudFormation::Stack",
-            "Condition": "RetainBuckets",
-            "DependsOn": ["Buckets"],
-            "Properties" : {
-                 "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/clearbuckets.json" ] ] },
-                 "Parameters" : {
-                    "SiteBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketName" ] },
-                    "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucketName" ] },
-                    "ClearBucketsFunctionARN": { "Fn::GetAtt" : [ "Functions", "Outputs.ClearBucketsFunction" ] }
-                 },
-                 "TimeoutInMinutes" : "60"
             }
         }
 
@@ -147,7 +123,7 @@
 
     "Outputs": {
         "WebsiteURL" : {"Value" : { "Fn::GetAtt" : [ "Distribution", "Outputs.WebsiteURL" ] }},
-        "S3SiteBucket" : {"Value" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucket" ] }},
+        "S3SiteBucket" : {"Value" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketName" ] }},
         "RepositoryCloneHttpUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneHttpUrl" ] }, "Condition": "BuildPipeline"},
         "RepositoryCloneSshUrl" : {"Value" : { "Fn::GetAtt" : [ "Pipeline", "Outputs.RepoCloneSSHUrl" ] }, "Condition": "BuildPipeline"}
     }

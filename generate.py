@@ -155,6 +155,8 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName, buildPipe
     if verbose:
         print("Starting Stack creation...")
 
+    pipeline = 'YES' if buildPipeline else 'NO'
+
     session = getSession()
     region = session.region_name
     templateUrl = "https://" + stackBucket + ".s3.amazonaws.com/stacks/master.json"
@@ -168,7 +170,7 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName, buildPipe
             {'ParameterKey': 'HostName', 'ParameterValue': hostName, 'UsePreviousValue': True},
             {'ParameterKey': 'AlternativeDomains', 'ParameterValue': 'none', 'UsePreviousValue': True},
             {'ParameterKey': 'BucketName', 'ParameterValue': stackBucket, 'UsePreviousValue': True},
-            {'ParameterKey': 'CreatePipeline', 'ParameterValue': buildPipeline, 'UsePreviousValue': True}
+            {'ParameterKey': 'CreatePipeline', 'ParameterValue': pipeline, 'UsePreviousValue': True}
         ],
         TimeoutInMinutes=60,
         Capabilities=['CAPABILITY_NAMED_IAM'],
