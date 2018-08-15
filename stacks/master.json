@@ -51,7 +51,7 @@
             "Properties" : {
                "TemplateURL" : { "Fn::Join" : [ "", [ "https://", "s3-", {"Ref" : "AWS::Region"}, ".amazonaws.com/", {"Ref":"BucketName"}, "/stacks/functions.json" ] ] },
 	           "Parameters" : {"BucketName" : {"Ref":"BucketName"}},
-               "TimeoutInMinutes" : "60"
+               "TimeoutInMinutes" : 60
             }
         },
 
@@ -76,7 +76,7 @@
                     "CertificateApprovalLambdaARN" : { "Fn::GetAtt" : [ "Functions", "Outputs.CertificateApprovalFunction" ] },
                     "CheckCertificateLambdaARN" : { "Fn::GetAtt" : [ "Functions", "Outputs.CheckCertificateFunction" ] }
                 },
-                "TimeoutInMinutes" : "60"
+                "TimeoutInMinutes" : 60
 	       }
         },
 
@@ -88,7 +88,7 @@
                      "HostedZoneName" : { "Fn::GetAtt" : [ "HostedZoneNameFunction", "HostedZoneName" ] },
                      "HostName" : {"Ref":"HostName"}
                  },
-                 "TimeoutInMinutes" : "60"
+                 "TimeoutInMinutes" : 60
             }
         },
 
@@ -100,7 +100,7 @@
                  "Parameters" : {
                      "S3BucketForWebSite" : { "Fn::GetAtt" : [ "Buckets", "Outputs.SiteBucketName" ] }
                  },
-                 "TimeoutInMinutes" : "60"
+                 "TimeoutInMinutes" : 60
             }
         },
 
@@ -115,7 +115,7 @@
                     "LogBucket" : { "Fn::GetAtt" : [ "Buckets", "Outputs.LogBucketUrl" ] },
                     "certificateARN" : { "Fn::GetAtt" : [ "Certificate", "Outputs.CertificateARN" ] }
                 },
-                "TimeoutInMinutes" : "60"
+                "TimeoutInMinutes" : 60
             }
         }
 

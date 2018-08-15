@@ -60,15 +60,15 @@
            "DistributionConfig" : {
              "Aliases" : [{ "Fn::Join" : [ "", [{ "Ref" : "HostName" }, ".", { "Ref" : "HostedZoneName" }]]}],
              "PriceClass" : "PriceClass_All",
-             "IPV6Enabled" : "true",
+             "IPV6Enabled" : true,
              "Comment" : "CDN for S3-backed website",
-             "Enabled" : "true",
+             "Enabled" : true,
              "Logging":{
                 "Bucket" : { "Ref" : "LogBucket" },
-                "IncludeCookies" : "true",
+                "IncludeCookies" : true,
                 "Prefix" : "cdn/"
             },
-              "DefaultCacheBehavior" : {"ForwardedValues" : { "QueryString" : "true" }, "TargetOriginId" : "S3StaticSite", "ViewerProtocolPolicy" : "redirect-to-https"},
+              "DefaultCacheBehavior" : {"ForwardedValues" : { "QueryString" : true }, "TargetOriginId" : "S3StaticSite", "ViewerProtocolPolicy" : "redirect-to-https"},
               "DefaultRootObject" : "index.html",
               "ViewerCertificate" : {
                 "AcmCertificateArn" : { "Ref" : "certificateARN" },
