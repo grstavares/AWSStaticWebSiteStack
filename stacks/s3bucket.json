@@ -1,0 +1,77 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+
+    "Description": "Cloud Formation Template for Site and Log Buckets for StaticWebSite on S3",
+
+    "Parameters": {
+        "HostedZoneName": {
+            "Type": "String",
+            "Description": "The DNS name of an existing Amazon Route 53 hosted zone"
+        },
+        "HostName": {
+            "Type": "String",
+            "Description": "The hostname that will be appended to HostZone to create the Site",
+            "AllowedPattern": "(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)",
+            "ConstraintDescription": "must be a valid host name."
+        }
+    },
+
+    "Resources": {
+        "S3BucketForWebsiteLog": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy": "Retain",
+            "UpdateReplacePolicy": "Retain",
+            "Properties": {
+                "BucketName": { "Fn::Join": ["", ["", "logs.", { "Ref": "HostName" }, ".", { "Ref": "HostedZoneName" }]] },
+                "AccessControl": "LogDeliveryWrite"
+            }
+        },
+
+        "S3BucketForWebsiteContent": {
+            "Type": "AWS::S3::Bucket",
+            "DeletionPolicy": "Retain",
+            "UpdateReplacePolicy": "Retain",
+            "DependsOn": ["S3BucketForWebsiteLog"],
+            "Properties": {
+                "BucketName": { "Fn::Join": ["", ["", { "Ref": "HostName" }, ".", { "Ref": "HostedZoneName" }]] },
+                "AccessControl": "Private",
+                "LoggingConfiguration": {
+                    "DestinationBucketName": { "Fn::Join": ["", ["", "logs.", { "Ref": "HostName" }, ".", { "Ref": "HostedZoneName" }]] },
+                    "LogFilePrefix": "bucket/"
+                }
+            }
+        }
+    },
+
+    "Outputs": {
+        "SiteBucketName": {
+            "Value": { "Ref": "S3BucketForWebsiteContent" },
+            "Description": "S3 Bucket configured to host content as a website",
+            "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-SiteBucketName" } }
+        },
+
+        "SiteBucketArn": {
+            "Value": { "Fn::GetAtt": ["S3BucketForWebsiteContent", "Arn"] },
+            "Description": "S3 Bucket configured to host content as a website",
+            "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-SiteBucketArn" } }
+        },
+
+        "SiteBucketUrl": {
+            "Value": { "Fn::GetAtt": ["S3BucketForWebsiteContent", "RegionalDomainName"] },
+            "Description": "S3 Bucket configured to host content as a website",
+            "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-SiteBucket" } }
+        },
+
+        "LogBucketName": {
+            "Value": { "Ref": "S3BucketForWebsiteLog" },
+            "Description": "S3 Bucket Name for logging",
+            "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-LogBucketName" } }
+        },
+
+        "LogBucketUrl": {
+            "Value": { "Fn::GetAtt": ["S3BucketForWebsiteLog", "DomainName"] },
+            "Description": "S3 Bucket Name for logging",
+            "Export": { "Name": { "Fn::Sub": "${AWS::StackName}-LogBucket" } }
+        }
+    }
+}

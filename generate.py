@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/python3
 
 __description__ = 'Python Script to Copy Stack Files to S3 and start the Stack Creation'
 __author__ = 'Gustavo Tavares'

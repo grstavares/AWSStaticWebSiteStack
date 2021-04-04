@@ -107,3 +107,4 @@ venv.bak/
 
 #Node Modules and NPM
 node_modules/*
+.vscode/settings.json
