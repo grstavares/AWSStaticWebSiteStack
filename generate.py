@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/local/bin/python3
 
 __description__ = 'Python Script to Copy Stack Files to S3 and start the Stack Creation'
 __author__ = 'Gustavo Tavares'
@@ -33,6 +33,7 @@ stackBucketsPattern = "{-INSERT BUCKET NAME WITH STACK TEMPLATES HERE-}"
 siteBucketPattern = "{-INSERT BUCKET NAME FOR STATIC WEBSITE HERE-}"
 siteStackPattern = "{-INSERT ANGULAR PROJECT NAME HERE-}"
 
+
 def parseArgs():
 
     parser = argparse.ArgumentParser("AWS StaticWeb Site Stack Creation")
@@ -46,8 +47,9 @@ def parseArgs():
 
     return parser.parse_args()
 
+
 def checkInputFiles(filesList):
-    
+
     if verbose:
         print("Checking files on local dir...")
 
@@ -57,11 +59,13 @@ def checkInputFiles(filesList):
 
     return all(listChecked)
 
+
 def generateBucketName(stackName):
     stack = stackName.lower()
     name = "-stackdefinitions-"
     timestamp = str(int(time.time()))
     return stack + name + timestamp
+
 
 def getSession():
     if awscliProfile == None:
@@ -69,8 +73,9 @@ def getSession():
     else:
         return boto3.Session(profile_name=awscliProfile)
 
+
 def createBucket(bucketName):
-    
+
     if verbose:
         print("Creating S3 Bucket " + bucketName + "...")
 
@@ -79,8 +84,9 @@ def createBucket(bucketName):
     s3.create_bucket(Bucket=bucketName, CreateBucketConfiguration={'LocationConstraint': region})
     return
 
+
 def updateBucketInStack(fileName, bucketName):
-    
+
     file = open(fileName, "r")
     if file.mode == 'r':
 
@@ -94,8 +100,9 @@ def updateBucketInStack(fileName, bucketName):
 
         return masterStack
 
+
 def updateBucketInBuildSpec(fileName, bucketName, stackName):
-    
+
     file = open(fileName, "r")
     if file.mode == 'r':
 
@@ -109,6 +116,7 @@ def updateBucketInBuildSpec(fileName, bucketName, stackName):
             return outputName
 
         return fileName
+
 
 def zipFiles(files):
 
@@ -125,6 +133,7 @@ def zipFiles(files):
 
     return zipfiles
 
+
 def upload(files, bucket):
 
     if verbose:
@@ -132,8 +141,9 @@ def upload(files, bucket):
 
     s3 = getSession().resource('s3')
     for file in files:
-        s3object = s3.Object(bucket, file.replace("-updated",""))
+        s3object = s3.Object(bucket, file.replace("-updated", ""))
         s3object.put(Body=open(file, 'rb'), ACL='bucket-owner-full-control')
+
 
 def clearZipped(files):
 
@@ -163,8 +173,8 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName, buildPipe
 
     cloudformation = session.client('cloudformation')
     response = cloudformation.create_stack(
-        StackName = stackName,
-        TemplateURL = templateUrl,
+        StackName=stackName,
+        TemplateURL=templateUrl,
         Parameters=[
             {'ParameterKey': 'HostedZone', 'ParameterValue': hostedZoneId, 'UsePreviousValue': True},
             {'ParameterKey': 'HostName', 'ParameterValue': hostName, 'UsePreviousValue': True},
@@ -175,6 +185,7 @@ def startStackCreation(stackName, stackBucket, hostedZoneId, hostName, buildPipe
         TimeoutInMinutes=60,
         Capabilities=['CAPABILITY_NAMED_IAM'],
     )
+
 
 args = parseArgs()
 awscliProfile = args.Profile

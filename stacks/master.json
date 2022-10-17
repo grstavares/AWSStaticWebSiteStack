@@ -131,7 +131,9 @@
                 "Parameters": {
                     "HostedZoneName": { "Fn::GetAtt": ["HostedZoneNameFunction", "HostedZoneName"] },
                     "HostName": { "Ref": "HostName" },
-                    "HostBucket": { "Fn::GetAtt": ["Buckets", "Outputs.SiteBucketUrl"] },
+                    "OriginBucket": { "Fn::GetAtt": ["Buckets", "Outputs.SiteBucketName"] },
+                    "OriginBucketArn": { "Fn::GetAtt": ["Buckets", "Outputs.SiteBucketArn"] },
+                    "OriginDomainName": { "Fn::GetAtt": ["Buckets", "Outputs.SiteBucketUrl"] },
                     "LogBucket": { "Fn::GetAtt": ["Buckets", "Outputs.LogBucketUrl"] },
                     "certificateARN": { "Fn::GetAtt": ["Certificate", "Outputs.CertificateARN"] }
                 },

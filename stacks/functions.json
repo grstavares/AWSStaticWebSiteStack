@@ -10,7 +10,7 @@
         },
         "NodeJSRuntime": {
             "Type": "String",
-            "Default": "nodejs12.x",
+            "Default": "nodejs14.x",
             "Description": "Version of NodeJS Runtime to be used by the Lambda Functions"
         }
     },
